@@ -65,8 +65,17 @@ function findSameValuePositions(arr, targetValue) {
       numberArray.sort((a, b) => b - a);
       let lastOneQuarPos = findSameValuePositions(numberArray,lastOneQuarterRes)
       let lastTwoQuarPos = findSameValuePositions(numberArray,lastTwoQuarterRes)
-      if (lastOneQuarterRes > 0 && lastTwoQuarterRes > 0 && lastOneQuarPos >= 0 && lastOneQuarPos <= 2){
+      /*
+      最新一季财报1-4/20季财报才行， 用最新一季财报来决定要不要留意该股票？同时要理解为什么revenue 和profit会升
+      因为通常连续两季财报都排在1-5/20的话，已经上升不少了
+      */
+
+      if (lastOneQuarterRes > 0 && lastTwoQuarterRes > 0 && lastOneQuarPos >= 0 && lastOneQuarPos <= 3 && lastTwoQuarterRes >= 0 && lastTwoQuarPos <= 5){
         matchedConditionStock.push(element.stockId);
+        if (element.stockId == 5054){
+          console.log(lastOneQuarPos)
+          console.log(lastTwoQuarPos)
+        }
       }      
       // Close the stockPage when done with it
       await stockPage.close();
