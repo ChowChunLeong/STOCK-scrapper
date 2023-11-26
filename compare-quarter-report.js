@@ -21,11 +21,12 @@ function findSameValuePositions(arr, targetValue) {
   await page.goto(process.env.STOCK_LIST_URL);
 
   // Filter in screener
-  await page.type('input[name="max_pe"]', '25');
-  await page.type('input[name="min_dy"]', '3');
-  await page.select('select[name="rtopq"]', '1'); //use the value, not the label
-
-
+  await page.type('input[name="max_pe"]', '15');
+  //await page.type('input[name="min_dy"]', '3');
+  //await page.select('select[name="rtopq"]', '1'); //use the value, not the label
+  //await page.select('select[name="rconq"]', 1)
+  //oversold -> neutral is what i want
+  await page.$eval('input[name="rsi"][value="neutral"]', check => check.checked = true)
   console.log('Button clicked successfully');
 
   await page.click('#submit'); // Replace with the actual selector for the submit button
@@ -62,20 +63,24 @@ function findSameValuePositions(arr, targetValue) {
       const numberArray = data.map(Number);
       let lastOneQuarterRes = numberArray[0];
       let lastTwoQuarterRes = numberArray[1];
+      let lastThreeQuarterRes = numberArray[2];
+      let lastFourQuarterRes  =numberArray[3];
+      let lastFiveQuarterRes = numberArray[4];
       numberArray.sort((a, b) => b - a);
       let lastOneQuarPos = findSameValuePositions(numberArray,lastOneQuarterRes)
       let lastTwoQuarPos = findSameValuePositions(numberArray,lastTwoQuarterRes)
       /*
       最新一季财报1-4/20季财报才行， 用最新一季财报来决定要不要留意该股票？同时要理解为什么revenue 和profit会升
       因为通常连续两季财报都排在1-5/20的话，已经上升不少了
+      要找当前低往上的股票
       */
-
-      if (lastOneQuarterRes > 0 && lastTwoQuarterRes > 0 && lastOneQuarPos >= 0 && lastOneQuarPos <= 3 && lastTwoQuarterRes >= 0 && lastTwoQuarPos <= 5){
+      //lasst 3-5 bad, last 1
+      //if (lastOneQuarterRes > 0 && lastTwoQuarterRes > 0 && lastOneQuarPos >= 0 && lastOneQuarPos <= 3 && lastTwoQuarterRes >= 0 && lastTwoQuarPos <= 5){
+      let excludeStock = [];
+      if (lastOneQuarterRes > 0 && lastTwoQuarterRes > 0 
+        
+        ){
         matchedConditionStock.push(element.stockId);
-        if (element.stockId == 5054){
-          console.log(lastOneQuarPos)
-          console.log(lastTwoQuarPos)
-        }
       }      
       // Close the stockPage when done with it
       await stockPage.close();
