@@ -22,6 +22,33 @@ function compareTargetBiggerThanTarget(target,compareTarget){
         );
     return result
 } 
+
+function calculatePercentageChange(oldValue, newValue) {
+  if (oldValue === 0) {
+    // Handling edge case where oldValue is zero to avoid division by zero
+    if (newValue === 0) {
+      return 0; // Both old and new values are zero, hence 0% change
+    } else {
+      return 0; // Old value is zero, so percentage change is infinite
+    }
+  }
+
+  return ((newValue - oldValue) / Math.abs(oldValue)) * 100;
+}
+
+function isWithinOneWeek(targetDate) {
+  const millisecondsInWeek = 7 * 24 * 60 * 60 * 1000; // Number of milliseconds in a week
+
+  // Get today's date and the target date
+  const today = new Date();
+  const dateToCheck = new Date(targetDate);
+
+  // Calculate the difference in milliseconds between the two dates
+  const difference = dateToCheck - today;
+
+  // Check if the absolute difference is less than or equal to one week in milliseconds
+  return Math.abs(difference) <= millisecondsInWeek;
+}
 (async () => {
     const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
@@ -57,18 +84,28 @@ function compareTargetBiggerThanTarget(target,compareTarget){
         const stockPage = await browser.newPage();
         await stockPage.goto(process.env.STOCK_DETAIL_URL + element.stockId);
         
-        const data = await stockPage.evaluate(() => {
+        const dataEPS = await stockPage.evaluate(() => {
         const rows = Array.from(document.querySelectorAll('#quarter_reports .financial_reports tr td.number:first-child'));
         const first20Rows = rows.slice(0, 20);
         return first20Rows.map(row => row.textContent);
         });
 
-        const numberArray = data.map(Number);
+        const dataDate = await stockPage.evaluate(() => {
+          const rows = Array.from(document.querySelectorAll('#quarter_reports .financial_reports tr td:nth-child(9)'));
+          const first20Rows = rows.slice(0, 20);
+          return first20Rows.map(row => row.textContent);
+        });
+
+        const numberArray = dataEPS.map(Number);
         let lastOneQuarterRes = numberArray[0];
         let lastTwoQuarterRes = numberArray[1];
         let lastThreeQuarterRes = numberArray[2];
         let lastFourQuarterRes  =numberArray[3];
         let lastFiveQuarterRes = numberArray[4];
+
+        const dateArray = dataDate.map(Date)
+        let lastOneQuarterReportAnnouncedDate = dataDate[0]
+
         numberArray.sort((a, b) => b - a);
         let lastOneQuarPos = findSameValuePositions(numberArray,lastOneQuarterRes);
         let lastTwoQuarPos = findSameValuePositions(numberArray,lastTwoQuarterRes);
@@ -78,13 +115,13 @@ function compareTargetBiggerThanTarget(target,compareTarget){
         /*
         用以找到近期潜力股
        */
-
+        let percentageChange = calculatePercentageChange(lastTwoQuarterRes,lastOneQuarterRes)
 
       //lasst 3-5 bad, last 1
       //if (lastOneQuarterRes > 0 && lastTwoQuarterRes > 0 && lastOneQuarPos >= 0 && lastOneQuarPos <= 3 && lastTwoQuarterRes >= 0 && lastTwoQuarPos <= 5){
         let excludeStock = [];
         if (lastOneQuarterRes > 0 && lastTwoQuarterRes > 0 &&
-            compareTargetBiggerThanTarget(last345QuarterEPS, last12QuarterEPS)
+          percentageChange >20 && isWithinOneWeek(lastOneQuarterReportAnnouncedDate)
         ){
         matchedConditionStock.push(element.stockId);
         }      
